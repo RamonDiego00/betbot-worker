@@ -1,0 +1,121 @@
+# Flow main vai ser o gatilho principal e vai ver isso:
+# Abrir chrome e entrar no site de aposta
+# Validar se está logado, se não, realizar login(flow de login-main.yaml)
+# Entrar em um for da lista de confrontos e linhas (flow de bet-main.yaml)
+# Finalizar o fluxo de apostas individuais ou multiplas com o valor da stake média.
+# Devolver o status para o backend via websocket 
+# Depois de algumas horas coletar as informações do saldo e resultados.
+
+# As unicas linhas disponiveis são: Total de gols, Escanteios , Resultado
+
+
+appId: com.android.chrome # Exemplo, ajuste conforme seu setup
+name: Betting Orchestrator Main Flow
+jsEngine: graaljs
+
+# onFlowStart:
+#   - runFlow: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/setup/setup.yaml
+#   - runFlow: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/login/login.yaml
+
+---
+# 1. Carrega o estado inicial
+- runScript: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/jsons/loader.js
+
+# 2. Loop Principal (Limpo)
+- repeat:
+    while:
+      true: "${output.matchIndex < output.totalMatches}"
+    commands:
+    # PASSO 1: Atualiza o contexto usando o script externo (Mais estável)
+      - runScript: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/jsons/update_context.js
+      - runFlow:
+          file: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/bets/make-bet.yaml
+          env:
+            MATCH_NAME: ${output.currentMatchName}  # Uso direto e limpo
+      
+      # (Aqui entraria o loop de mercados seguindo a mesma lógica...)
+
+      # Incrementa para a próxima volta
+      - evalScript: output.matchIndex = output.matchIndex + 1
+
+# ==============================================================================
+# LOOP DE JOGOS (MATCHES)
+# ==============================================================================
+- repeat:
+    while:
+      true: ${output.matchIndex < output.totalMatches} # Sem espaços extras
+    commands:
+      # 3. Define variáveis do Jogo Atual
+      - evalScript: |
+          output.currentMatch = output.jsonData.matches[output.matchIndex];
+          output.currentMatchName = output.currentMatch.match_name;
+          console.log("--> Processando Jogo " + (output.matchIndex + 1) + "/" + output.totalMatches + ": " + output.currentMatchName);
+
+      # 4. Entra no Jogo (Busca e Clica)
+      - runFlow:
+          file: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/bets/make-bet.yaml
+          env:
+            MATCH_NAME: ${output.currentMatchName}
+
+      # 5. Prepara Loop de Mercados
+      - evalScript: |
+          output.marketIndex = 0;
+          if (output.currentMatch.markets) {
+              output.totalMarkets = output.currentMatch.markets.length;
+          } else {
+              output.totalMarkets = 0;
+          }
+
+      # ==========================================================================
+      # LOOP DE MERCADOS (MARKETS)
+      # ==========================================================================
+      - repeat:
+          while:
+             true: ${ output.marketIndex < output.totalMarkets }
+          commands:
+            # 6. Extrai Dados da Aposta (Jogador, Coluna, etc)
+            - evalScript: |
+                output.currentMarket = output.currentMatch.markets[output.marketIndex];
+                output.currentMarketName = output.currentMarket.market_name;
+                
+                // LÓGICA DE SELEÇÃO:
+                // Pega a primeira seleção disponível neste mercado para apostar
+                // (Se precisar de loop para apostar em todos os jogadores, seria aqui)
+                var selection = output.currentMarket.selections[0];
+                
+                if (selection) {
+                  output.targetPlayerName = selection.visual_target; // Ex: "Riccardo Orsolini"
+                  output.targetColumn = selection.column_index;      // Ex: 0
+                  output.targetValue = selection.description;        // Apenas log
+                  output.isValidBet = true;
+                } else {
+                   output.isValidBet = false;
+                   console.log("Aviso: Mercado sem seleções configuradas.");
+                }
+
+            # 7. Executa a Aposta (Se for Chutes ao Gol)
+            - runFlow:
+                when:
+                  # Só roda se for o mercado certo E tiver dados válidos
+                  true: ${ output.currentMarketName == 'Jogador - Chutes ao Gol' && output.isValidBet }
+                file: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/bets/players_lines.yaml
+                env:
+                  MARKET_NAME: ${output.currentMarketName}
+                  
+                  # AQUI ESTÁ O SEGREDO: Passamos as variáveis extraídas do JSON
+                  PLAYER_NAME: ${output.targetPlayerName} 
+                  COLUMN_INDEX: ${output.targetColumn}
+
+            # Incrementa índice de mercados
+            - evalScript: output.marketIndex = output.marketIndex + 1
+
+      # Incrementa índice de jogos
+      - evalScript: output.matchIndex = output.matchIndex + 1
+
+# ==============================================================================
+# FINALIZAÇÃO
+# ==============================================================================
+- runFlow:
+    file: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/bets/finish-bet.yaml
+    env:
+      STAKE: "${output.jsonData.global_stake}"

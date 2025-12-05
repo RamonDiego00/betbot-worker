@@ -1,0 +1,72 @@
+Aqui está uma lista de dados 
+
+Os dados que preciso extrair para as melhores tomadas de decisão das apostas vão se dividir entre dados de clubes e dados de jogadores.
+
+As linhas que vão ser preferenciadas nas analises que a IA serão as seguintes:
+
+
+Times:
+
+1º Total de gols 
+2º Escanteios
+3º Total de chutes a gol
+4º Total de Finalizações
+5º Ambas marcam
+6º Cartões
+
+
+Jogadores:
+
+1º Chutes a gol
+2º Finalizações
+3º Desarmes
+
+Campeonatos:
+
+Premier League 
+Champions
+La liga
+Brasileirão
+Bundesliga
+Liga Europa
+Ligue 1
+Seria A
+
+Para isso algumas informações vão precisar ser coletadas dos jogos passados via scraping da sofa score, os dados que vão ser olhados sempre vão ser referentes aos ultimos 5 jogos da liga em questão 
+capturando dados como total de gols nessas partidas por cada time, total de escanteios por cada time, se ambos os times marcaram, numero de cartões e total de chutes a gol.
+
+A coleta de dados deve ser feita momentos antes da partida se iniciar para evitar coletas desncesarias, o ideal seria 1h antes do jogo se iniciar para já obter a lista de jogadores titulares.
+
+além disso as informações vão ser atualizadas acada nova partida que o time jogar.
+
+O limite de odd deve ficar entre 1,70 e 2,10 , nem abaixo e nem acima.
+
+Esse scraping de varredura vai ser feito 1h antes do primeiro jogo do primeiro horário começar, pois os jogos vão ser divididos entre manha(7h até as 13), tarde(13h até as 18h) e noite(18h até as 23h)
+
+Com a lista de jogos capturada do dia atual segmentado por campeonato e por horários é possivel delimitar o trigguer da proxima coleta para então coletar os dados dos times + Jogadores.
+
+Para que a lógica funcione o ideal seriam ter 3 entradas ao dia, porem como nem todos os dias tem jogos nos 3 horários a ideia é correr o menor risco com o maior numero de apostas.
+
+Com isso conseguimos delimitar as tarefas de scraping e como deve ficar delimitado:
+
+
+
+1º Capturar jogos do dia de hoje segmentado por horário(manha, tarde e noite) e campeonato
+
+2º Criar o trigguer para fazer a varredura do horário baseado 1h do primeiro jogo
+
+3º Fazer varredura das odds de cada linha capturada na bet sem estar logado.
+
+4º Criar API para abstrair o acesso ao banco de dados criados e os seus trigguers
+
+5º Validar comportamento da IA ao consultar essas informações dos dados via API
+
+6º Iniciar testes de resultados da IA com foco em mais de 65% de acertos no mes.
+
+
+
+
+
+
+
+

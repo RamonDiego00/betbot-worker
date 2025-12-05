@@ -1,0 +1,14 @@
+appId: com.android.chrome
+name: "Complete and put value to bet"
+---
+- tapOn: "Aposta" 
+# - inputText: "${STAKE}" # Isso precisa ser validado por conta do ponto
+- tapOn: "0"
+- tapOn: ","
+- tapOn: "5"
+- tapOn: "Fazer aposta" 
+- tapOn: "X" 
+
+
+ # Fluxo condicional para validar a quantidade de chutes a gol
+#  Capturar 

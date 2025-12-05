@@ -1,0 +1,68 @@
+appId: com.android.chrome
+name: Insert value about line odd
+# androidWebViewHierarchy: devtools
+---
+
+- scrollUntilVisible:
+    centerElement: true
+    timeout: 50000
+    speed: 60 
+    element:
+      text: "Jogador a Marcar" # Scrollou até a line
+
+- tapOn: "Jogador a Marcar" # Contrair a line de marcar
+
+# Espera qualquer animação visual parar antes de prosseguir
+- waitForAnimationToEnd:
+    timeout: 2000 # Espera até 2s (opcional, padrão é inteligente)
+
+- scrollUntilVisible:
+    centerElement: true
+    timeout: 50000
+    visibilityPercentage: 100
+    speed: 1
+    element:
+      text: "${MARKET_NAME}"
+      index: 1 # Scrollou até a line
+
+- tapOn: 
+    text: "${MARKET_NAME}"
+    index: 1  # Espandiu a line
+
+
+# - assertVisible: "${VALUE_NAME}" # visualizou o valor que ele econtrou (player ou geral)
+
+- scrollUntilVisible:
+    centerElement: true
+    timeout: 50000
+    visibilityPercentage: 100
+    speed: 1
+    element:
+      text: "${VALUE_NAME}"
+      index: 1 # Scrollou até a minha odd
+
+# Caso não encontre o value, modificar o time para o do jogador ser encontrado
+# Primeiro vamos com uma abordagem de só linhas do time
+
+- tapOn:
+    text: '[0-9]+\.[0-9]{2}' # Regex de achar Odds
+    
+    # A relação relativa            
+    below:  "${BELLOW_VALUE}" # Dinamico numero do jogador acima ou line de cima
+    rightOf: "${VALUE_NAME}" # Nome do jogador ou line
+    
+    # Index 0 garante que é o PRIMEIRO número decimal à direita (coluna 1+)
+    # 0 - 1 chute ao gol, 1 - 2 chutes ao gol
+    index: "${COLUMN_INDEX}"
+
+- tapOn: 
+    text: "${MARKET_NAME}"
+    index: 1  # Contrair a line que selecionamos
+
+- scrollUntilVisible:
+    direction: UP
+    timeout: 50000
+    speed: 10 
+    element:
+      text: "Criar Aposta" # Volta para parte de cima
+  

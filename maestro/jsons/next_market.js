@@ -1,0 +1,1 @@
+output.marketIndex = output.marketIndex + 1;

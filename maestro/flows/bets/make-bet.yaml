@@ -1,0 +1,19 @@
+appId: com.android.chrome
+name: Search Game and create bet
+---
+- tapOn: "Pesquisar" 
+- tapOn: "Pesquisar na bet365…"
+
+- evalScript: maestro.sleep(1000) // Espera 500ms o teclado subir (apenas se necessário)
+
+- inputText: "${MATCH_NAME}"
+
+- assertVisible: "${MATCH_NAME}"
+
+- tapOn:
+    text: "${MATCH_NAME}"
+    index: 1
+
+- tapOn: "Criar Aposta"
+
+

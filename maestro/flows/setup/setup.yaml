@@ -1,0 +1,9 @@
+appId: com.android.chrome
+# androidWebViewHierarchy: devtools
+---
+- launchApp:
+    appId: "com.android.chrome"
+- tapOn:
+    id: "com.android.chrome:id/search_box_text"
+- inputText: "https://www.bet365.com/#/HO/" 
+- pressKey: Enter

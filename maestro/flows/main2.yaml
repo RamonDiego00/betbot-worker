@@ -1,0 +1,86 @@
+appId: com.android.chrome
+name: Betting Orchestrator Main Flow
+jsEngine: graaljs
+
+# onFlowStart:
+#   - runFlow: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/setup/setup.yaml
+#   - runFlow: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/login/login.yaml
+
+onFlowComplete:
+  - stopApp: com.android.chrome
+
+---
+
+
+# 1. SETUP INICIAL
+- runScript: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/jsons/loader.js
+
+# 2. LOOP DE JOGOS (MATCHES)
+- repeat:
+    while:
+      true: "${output.matchIndex < output.totalMatches}"
+    commands:
+      # --- LÓGICA DE JOGO (JS EXTERNO) ---
+      - runScript: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/jsons/context_match.js
+
+      # Ação: Entrar na Partida
+      - runFlow:
+          file: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/bets/make-bet.yaml
+          env:
+            MATCH_NAME: ${output.currentMatchName}
+
+      # 3. LOOP DE MERCADOS (MARKETS)
+      - repeat:
+          while:
+             true: "${output.marketIndex < output.totalMarkets}"
+          commands:
+            # --- LÓGICA DE MERCADO (JS EXTERNO) ---
+            - runScript: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/jsons/context_market.js
+
+  # ==================================================================
+            # AÇÃO 1: Mercados Especiais (Escanteios ou Cartões)
+            # ==================================================================
+            - runFlow:
+                when:
+                  # Só roda se for aposta válida E o nome for um dos especiais
+                  true: "${ output.isValidBet && (output.currentMarketName == 'Escanteios' || output.currentMarketName == 'Cartões') }"
+                file: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/bets/special_team_lines.yaml
+                env:
+                  MARKET_NAME: ${output.currentMarketName}
+                  VALUE_NAME: ${output.targetValue}
+                  BELLOW_VALUE: ${output.previousTargetValue}
+                  COLUMN_INDEX: ${output.targetColumn}
+
+            # ==================================================================
+            # AÇÃO 2: Mercados Padrão (Jogadores, etc)
+            # ==================================================================
+            - runFlow:
+                when:
+                  # Só roda se for aposta válida E NÃO FOR um dos especiais
+                  true: "${ output.isValidBet && output.currentMarketName != 'Escanteios' && output.currentMarketName != 'Cartões' }"
+                file: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/bets/players_lines.yaml
+                env:
+                  MARKET_NAME: ${output.currentMarketName}
+                  VALUE_NAME: ${output.targetValue}
+                  BELLOW_VALUE: ${output.previousTargetValue}
+                  COLUMN_INDEX: ${output.targetColumn}
+            # Próximo Mercado
+            - runScript: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/jsons/next_market.js
+
+      # Ação: Voltar para lista de jogos (Importante para o loop funcionar)
+      # Adicione aqui seu passo de 'Back' se necessário, ex: - tapOn: "Voltar" ou use o botão nativo
+
+      # 1. Clica na Logo para voltar
+      - tapOn: "bet365 Logo" 
+
+      - assertVisible: 
+          text: "Todos os Esportes" 
+                
+      # Próxima Partida
+      - runScript: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/jsons/next_match.js
+
+# 4. FINALIZAÇÃO
+- runFlow:
+    file: /Users/ramondiegodossantosferreira/Documents/projects/automation/maestro/flows/bets/finish-bet.yaml
+    env:
+      STAKE: "${output.jsonData.global_stake}"

@@ -1,0 +1,6 @@
+appId: com.android.chrome
+---
+- tapOn: "Login"
+- inputText: "3663"
+- pressKey: Enter
+- tapOn: "Continuar"
