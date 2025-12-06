@@ -31,8 +31,8 @@ def save_matches_to_db(matches_list):
 
             # 2. Inserir os Jogos vinculados a esse Batch
             match_query = text("""
-                INSERT INTO tb_match (match_name, batch_id, external_id)
-                VALUES (:match_name, :batch_id, :external_id)
+                INSERT INTO tb_match (match_name, batch_id, external_id, home_team_id, away_team_id, season_id, tournament_unique_id)
+                VALUES (:match_name, :batch_id, :external_id, :hid, :aid, :sid, :tid)
             """)
 
             print(f"📦 Criando Batch {import_id} com {len(matches_list)} jogos...")
@@ -41,7 +41,11 @@ def save_matches_to_db(matches_list):
                 connection.execute(match_query, {
                     "match_name": match['name'],
                     "batch_id": batch_db_id,
-                    "external_id": match['external_id']
+                    "external_id": match['external_id'],
+                    "hid": match['home_team_id'],
+                    "aid": match['away_team_id'],
+                    "sid": match['season_id'],
+                    "tid": match['tournament_unique_id']
                 })
 
             trans.commit() # Confirma tudo
